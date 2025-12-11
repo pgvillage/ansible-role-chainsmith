@@ -1,7 +1,10 @@
 ---
 galaxy_info:
   author: S. Mannem
-  description: CTO
+  description: |
+    Chainsmith is a tool for generating tls chains with server and client certificates.
+    This role installs Chainsmith and runs it to generate and distribute a chain ready to be used by PostgreSQL for encryption in transit and authentication.
+
   company: Nibble-IT
 
   # If the issue tracker for your role is not on github, uncomment the
