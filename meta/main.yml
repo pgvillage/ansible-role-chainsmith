@@ -1,5 +1,7 @@
 ---
 galaxy_info:
+  namespace: pgvillage
+  role_name: chainsmith
   author: S. Mannem
   description: |
     Chainsmith is a tool for generating tls chains with server and client certificates.
