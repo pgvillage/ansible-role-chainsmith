@@ -35,8 +35,8 @@
 
 - name: Set chain facts
   ansible.builtin.set_fact:
-    chainsmith_results_server_cert: "{{ chainsmith_results.certs.server[ansible_fqdn] }}"
-    chainsmith_results_server_key: "{{ chainsmith_results.private_keys.server[ansible_fqdn] }}"
+    chainsmith_results_server_cert: "{{ chainsmith_results.certs.server[ansible_facts.fqdn] }}"
+    chainsmith_results_server_key: "{{ chainsmith_results.private_keys.server[ansible_facts.fqdn] }}"
     chainsmith_results_server_chain: "{{ chainsmith_results.certs.server.chain }}"
     chainsmith_results_client_certs: "{{ chainsmith_results.certs.client }}"
     chainsmith_results_client_chain: "{{ chainsmith_results.certs.client.chain }}"
