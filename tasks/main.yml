@@ -56,7 +56,7 @@
   vars:
     issuecount: |
       {{
-        (groups["hacluster"] + groups["backup"]) |
+        chainsmith_nodes |
         map("extract", hostvars) |
         selectattr("chainsmith_cert_check", "defined") |
         map(attribute="chainsmith_cert_check.rc") |
