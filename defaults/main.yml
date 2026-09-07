@@ -31,8 +31,7 @@ chainsmith_server_intermediate:
     - serverAuth
   servers: "{{ chainsmith_servers }}"
 
-chainsmith_node_group: hacluster
-chainsmith_nodes: "{{ groups[chainsmith_node_group] }}"
+chainsmith_nodes: "{{ groups['hacluster'] + groups['backup'] }}"
 chainsmith_hosts: "{% set nodes = [] %}{% for node in chainsmith_nodes %}{% do nodes.append(hostvars[node].ansible_facts.fqdn) %}{% endfor %}{{ nodes }}"
 chainsmith_ips: |
   {% set nodes = [] %}
@@ -57,7 +56,7 @@ chainsmith_servers: |
 
 # you can specify users and client certs per node group, by default we deploy on all nodes
 chainsmith_users:
-  stolon:
+  hacluster:
     - postgres
     - avchecker
     - pgquartz
