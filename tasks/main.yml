@@ -5,6 +5,7 @@
   ansible.builtin.getent:
     database: passwd
     split: ":"
+  when: 'inventory_hostname != "localhost"'
 
 - name: Install
   ansible.builtin.import_tasks: install.yml
