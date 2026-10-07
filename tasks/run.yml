@@ -32,6 +32,19 @@
         CHAINSMITH_CONFIG: "{{ chainsmith_config.path }}"
       register: chainsmith_out
       changed_when: false
+      
+- name: Verify server certificate was generated
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.fqdn in chainsmith_results.certs.server
+      - ansible_facts.fqdn in chainsmith_results.private_keys.server
+    fail_msg: >-
+      No Chainsmith certificate/key generated for {{ ansible_facts.fqdn }}.
+      Available certificates:
+      {{ chainsmith_results.certs.server.keys() | list }}
+  vars:
+    chainsmith_results: "{{ hostvars.localhost.chainsmith_out.stdout | from_yaml }}"
+  when: inventory_hostname != "localhost"
 
 - name: Set chain facts
   ansible.builtin.set_fact:

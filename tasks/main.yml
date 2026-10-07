@@ -38,8 +38,9 @@
     CHAINSMITH_CERT_LIST: "{{ chainsmith_cert_list }}"
     CHAINSMITH_EXPIRY_DAYS: "{{ chainsmith_expiry_days | default(30) }}"
   register: chainsmith_cert_check
-  ignore_errors: true
-  when: 'inventory_hostname != "localhost"'
+  changed_when: false
+  failed_when: chainsmith_cert_check.rc not in [0, 1]
+  when: inventory_hostname != "localhost"
 
 # - name: debug
 #   debug:
@@ -54,19 +55,20 @@
 
 - name: Generate and deploy certs
   vars:
-    issuecount: |
+    issuecount: >-
       {{
-        (groups["hacluster"] + groups["backup"]) |
-        map("extract", hostvars) |
-        selectattr("chainsmith_cert_check", "defined") |
-        map(attribute="chainsmith_cert_check.rc") |
-        max
+        (groups["hacluster"] + groups["backup"])
+        | map("extract", hostvars)
+        | selectattr("chainsmith_cert_check.rc", "defined")
+        | map(attribute="chainsmith_cert_check.rc")
+        | max
       }}
-  when: issuecount|int > 0
+  when: issuecount | int == 1
   block:
     - name: Run chainsmith
       ansible.builtin.import_tasks: run.yml
       become: false
+
     - name: Deploy certs
       ansible.builtin.import_tasks: deploy_certs.yml
-      when: 'inventory_hostname != "localhost"'
+      when: inventory_hostname != "localhost"
