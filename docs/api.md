@@ -112,6 +112,7 @@ chainsmith_servers: |
 | `chainsmith_server_cert_owner` | `postgres` | OS user owning the server certificate folder and files. |
 | `chainsmith_server_folders` | `[{dest: chainsmith_server_cert_path, owner: chainsmith_server_cert_owner}]` | Folders to create for the server certificate files (mode `0700`). |
 | `chainsmith_server_cert_files` | `server.crt` and `root.crt` | List of dicts (`dest`, `owner`, `content`) of server certificate files to deploy (mode `0600`). `root.crt` contains the client chain, used by the server to verify client certificates. |
+| `chainsmith_server_key_files` | `server.key` | List of dicts (`dest`, `owner`, `content`) of server private key files to deploy (mode `0600`). |
 
 ## Clients
 
