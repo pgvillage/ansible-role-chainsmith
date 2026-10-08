@@ -114,6 +114,11 @@ chainsmith_servers: |
 | `chainsmith_server_cert_files` | `server.crt` and `root.crt` | List of dicts (`dest`, `owner`, `content`) of server certificate files to deploy (mode `0600`). `root.crt` contains the client chain, used by the server to verify client certificates. |
 | `chainsmith_server_key_files` | `server.key` | List of dicts (`dest`, `owner`, `content`) of server private key files to deploy (mode `0600`). |
 
+Each default entry in `chainsmith_server_folders`, `chainsmith_server_cert_files`, and
+`chainsmith_server_key_files` defines its `owner` explicitly as
+`{{ chainsmith_server_cert_owner }}` (default: `postgres`). There is no implicit `root`
+default for `owner`.
+
 ## Clients
 
 | Variable | Default | Description |
