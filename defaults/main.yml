@@ -9,7 +9,7 @@ chainsmith_package_names:
   - chainsmith
 
 # Path to the chainsmith executable on localhost.
-chainsmith_cmd: "/usr/local/bin/chainsmith"
+chainsmith_cmd: "/usr/bin/chainsmith"
 
 # Path on each target node where the list of deployed certificate files is written.
 # This list is used to check if certificates are missing or about to expire.
