@@ -1,0 +1,70 @@
+---
+- name: Verify
+  hosts: all
+  vars:
+    server_dir: /etc/pki/postgres
+    client_dir: /home/postgres/.postgresql
+  tasks:
+    - name: Read the certificate files
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "{{ server_dir }}/server.crt"
+        - "{{ server_dir }}/server.key"
+        - "{{ server_dir }}/root.crt"
+        - "{{ client_dir }}/postgresql.crt"
+        - "{{ client_dir }}/postgresql.key"
+        - "{{ client_dir }}/root.crt"
+      register: cert_files
+
+    - name: Check that the certificate files are private to postgres
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.pw_name == 'postgres'
+          - item.stat.mode == '0600'
+        fail_msg: "{{ item.item }} is missing or has the wrong owner or mode"
+      loop: "{{ cert_files.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    # root.crt of a client is the server chain, root.crt of the server the client chain
+    - name: Check that the server certificate is valid for the host and signed by the server chain
+      ansible.builtin.shell: |
+        set -eo pipefail
+        openssl verify -CAfile {{ client_dir }}/root.crt {{ server_dir }}/server.crt
+        openssl x509 -in {{ server_dir }}/server.crt -noout -ext subjectAltName | grep -F 'DNS:{{ ansible_facts.fqdn }}'
+        openssl x509 -in {{ server_dir }}/server.crt -noout -checkhost {{ ansible_facts.fqdn }} | grep -F ' does match'
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    - name: Check that the client certificate is for postgres and signed by the client chain
+      ansible.builtin.shell: |
+        set -eo pipefail
+        openssl verify -CAfile {{ server_dir }}/root.crt {{ client_dir }}/postgresql.crt
+        openssl x509 -in {{ client_dir }}/postgresql.crt -noout -subject -nameopt RFC2253 | grep -E '(^subject=|,)CN=postgres(,|$)'
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    - name: Check that the keys belong to the certificates
+      ansible.builtin.shell: |
+        set -e
+        [ "$(openssl x509 -in {{ item }}.crt -noout -pubkey)" = "$(openssl pkey -in {{ item }}.key -pubout)" ]
+      loop:
+        - "{{ server_dir }}/server"
+        - "{{ client_dir }}/postgresql"
+      changed_when: false
+
+    - name: Read the list of certificates the role checks for expiry
+      ansible.builtin.slurp:
+        src: /tmp/chainsmith_cert_list.txt
+      register: cert_list
+
+    - name: Check the list of certificates
+      ansible.builtin.assert:
+        that: >-
+          cert_list.content | b64decode | split('\n') | select | sort ==
+          [client_dir ~ '/postgresql.crt', client_dir ~ '/root.crt',
+           server_dir ~ '/root.crt', server_dir ~ '/server.crt'] | sort

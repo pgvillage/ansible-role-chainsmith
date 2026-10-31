@@ -17,6 +17,7 @@
     suffix: chainsmith
   become: false
   register: chainsmith_tmpfile
+  changed_when: false
   when: 'inventory_hostname == "localhost"'
 
 # - name: Debug
@@ -39,6 +40,7 @@
     CHAINSMITH_CERT_LIST: "{{ chainsmith_cert_list }}"
     CHAINSMITH_EXPIRY_DAYS: "{{ chainsmith_expiry_days | default(30) }}"
   register: chainsmith_cert_check
+  changed_when: false
   ignore_errors: true
   when: 'inventory_hostname != "localhost"'
 
