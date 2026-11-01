@@ -68,3 +68,22 @@
           cert_list.content | b64decode | split('\n') | select | sort ==
           [client_dir ~ '/postgresql.crt', client_dir ~ '/root.crt',
            server_dir ~ '/root.crt', server_dir ~ '/server.crt'] | sort
+
+# The role keeps its output (CA and private keys) in a temporary dir on the
+# controller, and must remove it, and its temporary config file, afterwards
+- name: Verify the controller
+  hosts: localhost
+  gather_facts: false
+  become: false
+  tasks:
+    - name: Find temporary chainsmith files and dirs left on the controller
+      ansible.builtin.find:
+        paths: "{{ lookup('env', 'TMPDIR') | default('/tmp', true) }}"
+        patterns: "ansible.*chainsmith"
+        file_type: any
+      register: leftovers
+
+    - name: Check that the role removed them
+      ansible.builtin.assert:
+        that: leftovers.matched == 0
+        fail_msg: "{{ leftovers.files | map(attribute='path') | list }}"
