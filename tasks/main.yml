@@ -20,13 +20,6 @@
   changed_when: false
   when: 'inventory_hostname == "localhost"'
 
-# - name: Debug
-#   debug:
-#     var: '{{ item }}'
-#   loop:
-#     - chainsmith_client_cert_files
-#     - chainsmith_server_cert_files
-
 # The temporary output dir and config file hold the CA and the private keys: always remove them afterwards
 - name: Generate, check and deploy the certificates, and clean up
   block:
@@ -46,17 +39,6 @@
       changed_when: false
       ignore_errors: true
       when: 'inventory_hostname != "localhost"'
-
-    # - name: debug
-    #   debug:
-    #     msg: |
-    #       {{
-    #         ansible_play_hosts_all |
-    #         map("extract", hostvars) |
-    #         selectattr("chainsmith_cert_check", "defined") |
-    #         map(attribute="chainsmith_cert_check.rc") |
-    #         max
-    #       }}'
 
     - name: Generate and deploy certs
       vars:

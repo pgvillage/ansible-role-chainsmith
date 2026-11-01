@@ -1,11 +1,4 @@
 ---
-# - name: path to config file
-#   debug:
-#     var: items
-#   loop:
-#     - "{{ chainsmith_internal_clients }}"
-#     - "{{ chainsmith_external_clients }}"
-
 - name: Run chainsmith with proper config
   when: 'inventory_hostname == "localhost"'
   block:
