@@ -20,56 +20,52 @@
   changed_when: false
   when: 'inventory_hostname == "localhost"'
 
-# - name: Debug
-#   debug:
-#     var: '{{ item }}'
-#   loop:
-#     - chainsmith_client_cert_files
-#     - chainsmith_server_cert_files
-
-- name: Create list of certs
-  ansible.builtin.template:
-    dest: "{{ chainsmith_cert_list }}"
-    src: chainsmith_cert_list.j2
-    mode: "0700"
-  when: 'inventory_hostname != "localhost"'
-
-- name: Check if certs need (re)placing
-  ansible.builtin.script: chainsmith_cert_check.sh
-  environment:
-    CHAINSMITH_CERT_LIST: "{{ chainsmith_cert_list }}"
-    CHAINSMITH_EXPIRY_DAYS: "{{ chainsmith_expiry_days | default(30) }}"
-  register: chainsmith_cert_check
-  changed_when: false
-  ignore_errors: true
-  when: 'inventory_hostname != "localhost"'
-
-# - name: debug
-#   debug:
-#     msg: |
-#       {{
-#         ansible_play_hosts_all |
-#         map("extract", hostvars) |
-#         selectattr("chainsmith_cert_check", "defined") |
-#         map(attribute="chainsmith_cert_check.rc") |
-#         max
-#       }}'
-
-- name: Generate and deploy certs
-  vars:
-    issuecount: |
-      {{
-        chainsmith_nodes |
-        map("extract", hostvars) |
-        selectattr("chainsmith_cert_check", "defined") |
-        map(attribute="chainsmith_cert_check.rc") |
-        max
-      }}
-  when: issuecount|int > 0
+# The temporary output dir and config file hold the CA and the private keys: always remove them afterwards
+- name: Generate, check and deploy the certificates, and clean up
   block:
-    - name: Run chainsmith
-      ansible.builtin.import_tasks: run.yml
-      become: false
-    - name: Deploy certs
-      ansible.builtin.import_tasks: deploy_certs.yml
+    - name: Create list of certs
+      ansible.builtin.template:
+        dest: "{{ chainsmith_cert_list }}"
+        src: chainsmith_cert_list.j2
+        mode: "0700"
       when: 'inventory_hostname != "localhost"'
+
+    - name: Check if certs need (re)placing
+      ansible.builtin.script: chainsmith_cert_check.sh
+      environment:
+        CHAINSMITH_CERT_LIST: "{{ chainsmith_cert_list }}"
+        CHAINSMITH_EXPIRY_DAYS: "{{ chainsmith_expiry_days | default(30) }}"
+      register: chainsmith_cert_check
+      changed_when: false
+      ignore_errors: true
+      when: 'inventory_hostname != "localhost"'
+
+    - name: Generate and deploy certs
+      vars:
+        issuecount: |
+          {{
+            chainsmith_nodes |
+            map("extract", hostvars) |
+            selectattr("chainsmith_cert_check", "defined") |
+            map(attribute="chainsmith_cert_check.rc") |
+            max
+          }}
+      when: issuecount|int > 0
+      block:
+        - name: Run chainsmith
+          ansible.builtin.import_tasks: run.yml
+          become: false
+        - name: Deploy certs
+          ansible.builtin.import_tasks: deploy_certs.yml
+          when: 'inventory_hostname != "localhost"'
+  always:
+    - name: Remove the temporary chainsmith output dir and config file (they hold the private keys)
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ [chainsmith_tmpfile.path | default(''), chainsmith_config.path | default('')] | select | list }}"
+      loop_control:
+        label: "{{ item }}"
+      become: false
+      changed_when: false
+      when: 'inventory_hostname == "localhost"'
