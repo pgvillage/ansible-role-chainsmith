@@ -1,0 +1,8 @@
+---
+# The role runs on localhost (where the chain is generated) and the nodes
+- name: Converge
+  hosts:
+    - localhost
+    - all
+  roles:
+    - role: pgvillage.chainsmith

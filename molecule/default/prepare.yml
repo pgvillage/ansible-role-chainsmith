@@ -1,0 +1,40 @@
+---
+# chainsmith runs on the controller, so download the chainsmith release for
+# the controller's OS and architecture into the scenario's ephemeral directory.
+- name: Prepare the controller
+  hosts: localhost
+  gather_facts: true
+  become: false
+  vars:
+    chainsmith_version: v0.3.23
+    chainsmith_dir: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}"
+    chainsmith_os: "{{ ansible_facts.system | lower }}"
+    chainsmith_arch: "{{ {'x86_64': 'amd64', 'aarch64': 'arm64'}.get(ansible_facts.architecture, ansible_facts.architecture) }}"
+    chainsmith_release: https://github.com/pgvillage-tools/chainsmith/releases/download/{{ chainsmith_version }}
+  tasks:
+    - name: Download chainsmith
+      ansible.builtin.get_url:
+        url: "{{ chainsmith_release }}/chainsmith_{{ chainsmith_version }}_{{ chainsmith_os }}_{{ chainsmith_arch }}.tar.gz"
+        dest: "{{ chainsmith_dir }}/chainsmith.tar.gz"
+        mode: "0644"
+
+    # unarchive needs GNU tar, which macOS does not have
+    - name: Extract chainsmith
+      ansible.builtin.command: tar -xzf chainsmith.tar.gz chainsmith  # noqa: command-instead-of-module
+      args:
+        chdir: "{{ chainsmith_dir }}"
+        creates: "{{ chainsmith_dir }}/chainsmith"
+
+# The role deploys the server certificate and the client certificates for the
+# users in chainsmith_users, which must exist.
+- name: Prepare the nodes
+  hosts: all
+  tasks:
+    - name: Install openssl, used by the role to check the certificates
+      ansible.builtin.dnf:
+        name: openssl
+        state: present
+
+    - name: Create the postgres user
+      ansible.builtin.user:
+        name: postgres

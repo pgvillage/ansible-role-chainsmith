@@ -21,7 +21,7 @@ The play must therefore include `localhost` as well as all hosts in `chainsmith_
 | --- | --- | --- |
 | `chainsmith_package_state` | `present` | State of the chainsmith package(s) (`present`, `latest`, `absent`). Installation only runs on localhost. |
 | `chainsmith_package_names` | `[chainsmith]` | List of packages to install to provide the chainsmith binary. |
-| `chainsmith_cmd` | `/usr/local/bin/chainsmith` | Path to the chainsmith executable on localhost. |
+| `chainsmith_cmd` | `/usr/bin/chainsmith` | Path to the chainsmith executable on localhost. |
 
 ## Expiry check
 
