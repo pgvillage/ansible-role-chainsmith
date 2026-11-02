@@ -1,6 +1,8 @@
 ---
 # defaults file for chainsmith
 
+chainsmith_controller_host: "{{ groups['localhosts'] | default(['localhost'], true) | first }}"
+
 # State of the chainsmith package(s) (present, latest, absent).
 # Installation only runs on localhost, where the chain is generated.
 chainsmith_package_state: present
@@ -9,7 +11,7 @@ chainsmith_package_names:
   - chainsmith
 
 # Path to the chainsmith executable on localhost.
-chainsmith_cmd: "/usr/local/bin/chainsmith"
+chainsmith_cmd: "/usr/bin/chainsmith"
 
 # Path on each target node where the list of deployed certificate files is written.
 # This list is used to check if certificates are missing or about to expire.
