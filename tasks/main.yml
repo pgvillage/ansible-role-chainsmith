@@ -5,11 +5,11 @@
   ansible.builtin.getent:
     database: passwd
     split: ":"
-  when: 'inventory_hostname != "localhost"'
+  when: inventory_hostname in chainsmith_nodes
 
 - name: Install
   ansible.builtin.import_tasks: install.yml
-  when: 'inventory_hostname == "localhost"'
+  when: inventory_hostname == chainsmith_controller_host
 
 - name: Create temporary chainsmith output dir
   ansible.builtin.tempfile:
@@ -18,7 +18,7 @@
   become: false
   register: chainsmith_tmpfile
   changed_when: false
-  when: 'inventory_hostname == "localhost"'
+  when: inventory_hostname == chainsmith_controller_host
 
 # The temporary output dir and config file hold the CA and the private keys: always remove them afterwards
 - name: Generate, check and deploy the certificates, and clean up
@@ -28,7 +28,7 @@
         dest: "{{ chainsmith_cert_list }}"
         src: chainsmith_cert_list.j2
         mode: "0700"
-      when: 'inventory_hostname != "localhost"'
+      when: inventory_hostname in chainsmith_nodes
 
     - name: Check if certs need (re)placing
       ansible.builtin.script: chainsmith_cert_check.sh
@@ -38,7 +38,7 @@
       register: chainsmith_cert_check
       changed_when: false
       ignore_errors: true
-      when: 'inventory_hostname != "localhost"'
+      when: inventory_hostname in chainsmith_nodes
 
     - name: Generate and deploy certs
       vars:
@@ -57,7 +57,7 @@
           become: false
         - name: Deploy certs
           ansible.builtin.import_tasks: deploy_certs.yml
-          when: 'inventory_hostname != "localhost"'
+          when: inventory_hostname in chainsmith_nodes
   always:
     - name: Remove the temporary chainsmith output dir and config file (they hold the private keys)
       ansible.builtin.file:
@@ -68,4 +68,4 @@
         label: "{{ item }}"
       become: false
       changed_when: false
-      when: 'inventory_hostname == "localhost"'
+      when: inventory_hostname == chainsmith_controller_host

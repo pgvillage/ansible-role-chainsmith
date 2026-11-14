@@ -1,6 +1,8 @@
 ---
 # defaults file for chainsmith
 
+chainsmith_controller_host: "{{ groups['localhosts'] | default(['localhost'], true) | first }}"
+
 # State of the chainsmith package(s) (present, latest, absent).
 # Installation only runs on localhost, where the chain is generated.
 chainsmith_package_state: present
