@@ -132,8 +132,11 @@ Default `chainsmith_users`:
 chainsmith_users:
   hacluster: [postgres, avchecker, pgquartz, pgfga]
   router: [pgroute66]
-  backup: [minio]
+  backup: [rustfs]
 ```
+
+Until v0.2.4 the default backup user was `minio`. Set `chainsmith_users` in your inventory to keep
+deploying client certificates for `minio`.
 
 ## Facts set by the role
 

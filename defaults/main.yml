@@ -84,8 +84,11 @@ chainsmith_users:
     - pgfga
   router:
     - pgroute66
+  # The RustFS object store on the backup hosts runs as rustfs (pgvillage.rustfs).
+  # Its client (rc) does not read the libpq paths below: set the
+  # chainsmith_client_* vars for the backup group (e.g. `.config/rc/certs`).
   backup:
-    - minio
+    - rustfs
 
 # Alternative (non-libpq) client cert locations:
 # chainsmith_client_cert_sub_folder: '.chainsmith'
