@@ -5,23 +5,51 @@ This document describes all variables of the `pgvillage.chainsmith` role, as def
 
 ## How the role works
 
-1. On `localhost` the `chainsmith` package is installed and a temporary output directory is created.
+1. On the host in `chainsmith_controller` the `chainsmith` package is installed and a temporary output directory is created.
 2. On every target node a list of certificate files (`chainsmith_cert_files`) is written to
    `chainsmith_cert_list`, and each file is checked for existence and for expiry within
    `chainsmith_expiry_days`.
-3. If any node reports a missing or expiring certificate, `chainsmith issue` is run on `localhost`
+3. If any node reports a missing or expiring certificate, `chainsmith issue` is run on the controller
    with the configuration in `chainsmith_body`, and the complete chain (server and client
    certificates and keys) is redeployed to all nodes.
 
-The play must therefore include `localhost` as well as all hosts in `chainsmith_nodes`.
+The inventory must define `chainsmith_controller` with exactly one host and
+`chainsmith_nodes` with at least one certificate recipient. The controller may
+also belong to `chainsmith_nodes`; in that case it performs both generation and
+certificate deployment. Neither responsibility depends on the host being named
+`localhost` or on its connection type.
+
+Run the role on both groups together, with facts gathered for the recipients.
+The role validates that the controller and all recipients are in the current
+play batch, including when using `--limit` or `serial`. Use the default `linear`
+strategy so checks finish on all recipients before generation and deployment.
+See the [inventory and playbook example](../README.md#example-playbook).
+
+Existing inventories must add these groups explicitly. There is no fallback to
+`localhosts`, `localhost`, `hacluster` or `backup` for host selection.
+
+## Inventory selection
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `chainsmith_controller_host` | First host in `groups['chainsmith_controller']` | The single inventory host that installs and runs Chainsmith. May also receive certificates. |
+| `chainsmith_nodes` | `{{ groups['chainsmith_nodes'] }}` | Inventory hosts that receive certificates and are checked for expiry. |
+
+The controller creates the temporary configuration, generates the complete chain
+when needed, and removes its temporary configuration and output directory in an
+`always` block. Generation runs without privilege escalation. Recipients read
+OS user information, check their certificate files, and deploy server and client
+certificates, trust chains and private keys with the configured ownership. Client
+certificate users are selected through `chainsmith_users` and must already exist.
+The role does not reload services after deployment.
 
 ## Installation
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `chainsmith_package_state` | `present` | State of the chainsmith package(s) (`present`, `latest`, `absent`). Installation only runs on localhost. |
+| `chainsmith_package_state` | `present` | State of the chainsmith package(s) (`present`, `latest`, `absent`). Installation only runs on the controller. |
 | `chainsmith_package_names` | `[chainsmith]` | List of packages to install to provide the chainsmith binary. |
-| `chainsmith_cmd` | `/usr/bin/chainsmith` | Path to the chainsmith executable on localhost. |
+| `chainsmith_cmd` | `/usr/bin/chainsmith` | Path to the chainsmith executable on the controller. |
 
 ## Expiry check
 
@@ -36,7 +64,7 @@ The play must therefore include `localhost` as well as all hosts in `chainsmith_
 | Variable | Default | Description |
 | --- | --- | --- |
 | `chainsmith_subject` | PgVillage / Mannem Solutions subject | Subject for the root CA and intermediates. Keys are X.509 subject attributes (`C`, `ST`, `L`, `O`, `OU`, `CN`). |
-| `chainsmith_tmpdir` | `{{ chainsmith_tmpfile.path }}` | Directory on localhost where chainsmith writes its output. Defaults to a temporary directory created by the role. |
+| `chainsmith_tmpdir` | `{{ chainsmith_tmpfile.path }}` | Directory on the controller where chainsmith writes its output. Defaults to a temporary directory created by the role. |
 | `chainsmith_server_intermediate` | *see below* | Intermediate CA that issues the server certificates. |
 | `chainsmith_client_intermediate` | *see below* | Intermediate CA that issues the client certificates. |
 | `chainsmith_body` | *see below* | Full chainsmith configuration, written as JSON and passed to `chainsmith issue`. |
@@ -88,7 +116,6 @@ chainsmith_body:
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `chainsmith_nodes` | `{{ groups['hacluster'] + groups['backup'] }}` | Inventory hosts that receive certificates and are checked for expiry. |
 | `chainsmith_hosts` | *(derived)* | List of FQDNs of all `chainsmith_nodes` (from facts). |
 | `chainsmith_ips` | *(derived)* | List of the first IPv4 address of all `chainsmith_nodes` (from facts). |
 | `chainsmith_servers` | *(derived)* | Dict of server certificates to generate: FQDN -> list of SAN entries. By default every server cert is valid for all hosts and IPs (`chainsmith_hosts + chainsmith_ips`), which is a requirement for stolon_proxy. |
@@ -137,8 +164,9 @@ chainsmith_users:
 
 ## Facts set by the role
 
-After generation, the following facts are set on every node (except localhost) and are
-referenced by the deployment variables above:
+After generation, the following facts are set on every certificate recipient,
+including the controller if it is a recipient, and are referenced by the
+deployment variables above:
 
 | Fact | Description |
 | --- | --- |

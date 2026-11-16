@@ -1,6 +1,6 @@
 ---
 # Tests the role on Rocky Linux 9 and 10 in systemd containers. As in
-# pgvillage, chainsmith runs on the Ansible controller (localhost), with a
+# pgvillage, chainsmith runs on a separate Ansible controller, with a
 # chainsmith release binary downloaded in prepare.yml, and the certificates are
 # deployed to the containers.
 dependency:
@@ -17,6 +17,7 @@ platforms:
     systemd: always
     groups:
       - hacluster
+      - chainsmith_nodes
   - name: chainsmith-el10
     image: docker.io/geerlingguy/docker-rockylinux10-ansible:latest
     pre_build_image: true
@@ -25,6 +26,7 @@ platforms:
     privileged: true
     groups:
       - hacluster
+      - chainsmith_nodes
 provisioner:
   name: ansible
   config_options:
@@ -32,9 +34,14 @@ provisioner:
       # The role's defaults use {% do %}, as does pgvillage's ansible.cfg
       jinja2_extensions: jinja2.ext.do
   inventory:
+    hosts:
+      chainsmith_controller:
+        hosts:
+          chainsmith-manager:
+            ansible_connection: local
+            ansible_python_interpreter: "{{ ansible_playbook_python }}"
     group_vars:
       all:
-        chainsmith_nodes: "{{ groups['hacluster'] }}"
         chainsmith_users:
           hacluster:
             - postgres

@@ -8,10 +8,6 @@
         suffix: chainsmith
       register: chainsmith_config
 
-    - name: Debug
-      ansible.builtin.debug:
-        var: chainsmith_nodes
-
     - name: Create chainsmith_config
       ansible.builtin.copy:
         dest: "{{ chainsmith_config.path }}"

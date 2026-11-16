@@ -1,6 +1,26 @@
 ---
 # tasks file for chainsmith
 
+- name: Validate chainsmith inventory groups
+  ansible.builtin.assert:
+    that:
+      - groups.get('chainsmith_controller', []) | length == 1
+      - groups.get('chainsmith_nodes', []) | length > 0
+    fail_msg: >-
+      Define chainsmith_controller with exactly one host and chainsmith_nodes
+      with at least one certificate recipient. The controller may also be a recipient.
+    quiet: true
+
+- name: Validate chainsmith play hosts
+  ansible.builtin.assert:
+    that:
+      - chainsmith_controller_host in ansible_play_batch
+      - chainsmith_nodes | difference(ansible_play_batch) | length == 0
+    fail_msg: >-
+      Run the chainsmith role on the controller and all certificate recipients
+      together in the same play batch, including when using --limit or serial.
+    quiet: true
+
 - name: Get user info
   ansible.builtin.getent:
     database: passwd

@@ -1,16 +1,18 @@
 ---
 # defaults file for chainsmith
 
-chainsmith_controller_host: "{{ groups['localhosts'] | default(['localhost'], true) | first }}"
+# Inventory group with exactly one host that generates the certificate chain.
+# The controller can also be a member of chainsmith_nodes.
+chainsmith_controller_host: "{{ groups['chainsmith_controller'] | first }}"
 
 # State of the chainsmith package(s) (present, latest, absent).
-# Installation only runs on localhost, where the chain is generated.
+# Installation only runs on the controller, where the chain is generated.
 chainsmith_package_state: present
 # List of packages to install to provide the chainsmith binary.
 chainsmith_package_names:
   - chainsmith
 
-# Path to the chainsmith executable on localhost.
+# Path to the chainsmith executable on the controller.
 chainsmith_cmd: "/usr/bin/chainsmith"
 
 # Path on each target node where the list of deployed certificate files is written.
@@ -30,7 +32,7 @@ chainsmith_subject:
   OU: PgVillage
   CN: postgres
 
-# Directory (on localhost) where chainsmith writes its output.
+# Directory (on the controller) where chainsmith writes its output.
 # Defaults to a temporary directory created by the role.
 chainsmith_tmpdir: "{{ chainsmith_tmpfile.path }}"
 # chainsmith_tmpdir: /tmp/certs/postgres
@@ -48,7 +50,7 @@ chainsmith_server_intermediate:
   servers: "{{ chainsmith_servers }}"
 
 # Inventory hosts that receive certificates (and are checked for expiry).
-chainsmith_nodes: "{{ groups['hacluster'] + groups['backup'] }}"
+chainsmith_nodes: "{{ groups['chainsmith_nodes'] }}"
 # List of FQDNs of all chainsmith_nodes (derived from facts).
 chainsmith_hosts: "{% set nodes = [] %}{% for node in chainsmith_nodes %}{% do nodes.append(hostvars[node].ansible_facts.fqdn) %}{% endfor %}{{ nodes }}"
 # List of the first IPv4 address of all chainsmith_nodes (derived from facts).

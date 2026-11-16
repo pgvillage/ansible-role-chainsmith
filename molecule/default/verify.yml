@@ -1,6 +1,6 @@
 ---
 - name: Verify
-  hosts: all
+  hosts: chainsmith_nodes
   vars:
     server_dir: /etc/pki/postgres
     client_dir: /home/postgres/.postgresql
@@ -72,13 +72,13 @@
 # The role keeps its output (CA and private keys) in a temporary dir on the
 # controller, and must remove it, and its temporary config file, afterwards
 - name: Verify the controller
-  hosts: localhost
-  gather_facts: false
+  hosts: chainsmith_controller
+  gather_facts: true
   become: false
   tasks:
     - name: Find temporary chainsmith files and dirs left on the controller
       ansible.builtin.find:
-        paths: "{{ lookup('env', 'TMPDIR') | default('/tmp', true) }}"
+        paths: "{{ ansible_facts.env.TMPDIR | default('/tmp', true) }}"
         patterns: "ansible.*chainsmith"
         file_type: any
       register: leftovers
