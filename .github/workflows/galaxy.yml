@@ -13,11 +13,11 @@ jobs:
     steps:
       # Stap 1: De code uitchecken (nodig zodat ansible-galaxy context heeft, indien gewenst)
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Stap 2: Python installeren (vereist voor Ansible)
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.13'  # ansible-core doesn't support 3.15 ('3.x') yet
 
