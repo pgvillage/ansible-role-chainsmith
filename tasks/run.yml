@@ -1,16 +1,12 @@
 ---
 - name: Run chainsmith with proper config
-  when: 'inventory_hostname == "localhost"'
+  when: inventory_hostname == chainsmith_controller_host
   block:
     - name: Create temporary chainsmith config file
       ansible.builtin.tempfile:
         state: file
         suffix: chainsmith
       register: chainsmith_config
-
-    - name: Debug
-      ansible.builtin.debug:
-        var: chainsmith_nodes
 
     - name: Create chainsmith_config
       ansible.builtin.copy:
@@ -35,5 +31,5 @@
     chainsmith_results_client_chain: "{{ chainsmith_results.certs.client.chain }}"
     chainsmith_results_client_keys: "{{ chainsmith_results.private_keys.client }}"
   vars:
-    chainsmith_results: "{{ hostvars.localhost.chainsmith_out.stdout | from_yaml }}"
-  when: 'inventory_hostname != "localhost"'
+    chainsmith_results: "{{ hostvars[chainsmith_controller_host].chainsmith_out.stdout | from_yaml }}"
+  when: inventory_hostname in chainsmith_nodes
