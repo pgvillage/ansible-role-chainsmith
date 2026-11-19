@@ -1,6 +1,9 @@
 ---
 # vars file for chainsmith
 
+# Evaluate per batch, including serial batches and repeated role invocations.
+_chainsmith_missing_hosts: "{{ ([chainsmith_controller_host] + chainsmith_nodes) | unique | difference(ansible_play_batch) | sort }}"
+
 chainsmith_client_folders: |
   {% set folders = [] %}
   {% for file in chainsmith_client_cert_files + chainsmith_client_key_files %}

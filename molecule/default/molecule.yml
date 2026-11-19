@@ -1,6 +1,6 @@
 ---
-# Tests the role on Rocky Linux 9 and 10 in systemd containers. As in
-# pgvillage, chainsmith runs on a separate Ansible controller, with a
+# Tests files, packages and users on Rocky Linux 9 and 10; no systemd is needed. As in
+# pgvillage, chainsmith runs on the first host in localhosts (legacy defaults), with a
 # chainsmith release binary downloaded in prepare.yml, and the certificates are
 # deployed to the containers.
 dependency:
@@ -13,20 +13,15 @@ platforms:
   - name: chainsmith-el9
     image: docker.io/geerlingguy/docker-rockylinux9-ansible:latest
     pre_build_image: true
-    command: /usr/sbin/init
-    systemd: always
+    command: sleep infinity
     groups:
       - hacluster
-      - chainsmith_nodes
   - name: chainsmith-el10
     image: docker.io/geerlingguy/docker-rockylinux10-ansible:latest
     pre_build_image: true
-    command: /usr/sbin/init
-    systemd: always
-    privileged: true
+    command: sleep infinity
     groups:
       - hacluster
-      - chainsmith_nodes
 provisioner:
   name: ansible
   config_options:
@@ -35,7 +30,7 @@ provisioner:
       jinja2_extensions: jinja2.ext.do
   inventory:
     hosts:
-      chainsmith_controller:
+      localhosts:
         hosts:
           chainsmith-manager:
             ansible_connection: local

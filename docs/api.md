@@ -5,7 +5,7 @@ This document describes all variables of the `pgvillage.chainsmith` role, as def
 
 ## How the role works
 
-1. On the host in `chainsmith_controller` the `chainsmith` package is installed and a temporary output directory is created.
+1. On the selected controller the `chainsmith` package is installed and a temporary output directory is created.
 2. On every target node a list of certificate files (`chainsmith_cert_files`) is written to
    `chainsmith_cert_list`, and each file is checked for existence and for expiry within
    `chainsmith_expiry_days`.
@@ -13,27 +13,40 @@ This document describes all variables of the `pgvillage.chainsmith` role, as def
    with the configuration in `chainsmith_body`, and the complete chain (server and client
    certificates and keys) is redeployed to all nodes.
 
-The inventory must define `chainsmith_controller` with exactly one host and
-`chainsmith_nodes` with at least one certificate recipient. The controller may
-also belong to `chainsmith_nodes`; in that case it performs both generation and
-certificate deployment. Neither responsibility depends on the host being named
-`localhost` or on its connection type.
+The `chainsmith_controller` and `chainsmith_nodes` inventory groups are optional.
+Without `chainsmith_controller`, the first host in `localhosts` generates the
+chain. Without `chainsmith_nodes`, the deduplicated union of `hacluster` and
+`backup` receives certificates. Each group independently overrides its default.
+When present, the controller group must contain exactly one host and the
+recipient group must not be empty. The resulting selection must always have
+one controller and at least one recipient.
 
-Run the role on both groups together, with facts gathered for the recipients.
-The role validates that the controller and all recipients are in the current
-play batch, including when using `--limit` or `serial`. Use the default `linear`
-strategy so checks finish on all recipients before generation and deployment.
+The controller can also be a recipient. Neither responsibility depends on its
+inventory hostname or on whether Ansible connects locally or over SSH. No parent
+inventory group is needed.
+
+To perform certificate work, run the role on the selected controller and
+recipients together, with facts available for recipients and the default
+`linear` strategy. If `--limit`, `serial` or play host selection excludes any
+required host from the current batch, the role prints a warning-style message
+once for that batch, identifying the controller and missing hosts. It skips all
+package installation, user discovery, certificate checks, generation, deployment
+and cleanup. Other tasks and roles continue normally; existing certificate files
+are untouched. Invalid inventory or effective host selection still fails
+validation before this decision.
+
+Each incomplete serial batch skips certificate work, so perform certificate
+management in a separate complete batch. A limit that includes the controller
+and every recipient runs normally. This behavior applies to both explicit
+groups and legacy defaults.
 See the [inventory and playbook example](../README.md#example-playbook).
-
-Existing inventories must add these groups explicitly. There is no fallback to
-`localhosts`, `localhost`, `hacluster` or `backup` for host selection.
 
 ## Inventory selection
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `chainsmith_controller_host` | First host in `groups['chainsmith_controller']` | The single inventory host that installs and runs Chainsmith. May also receive certificates. |
-| `chainsmith_nodes` | `{{ groups['chainsmith_nodes'] }}` | Inventory hosts that receive certificates and are checked for expiry. |
+| `chainsmith_controller_host` | First host in `chainsmith_controller`, otherwise first in `localhosts` | The single inventory host that installs and runs Chainsmith. May also receive certificates. |
+| `chainsmith_nodes` | Hosts in `chainsmith_nodes`, otherwise `hacluster + backup` (deduplicated) | Inventory hosts that receive certificates and are checked for expiry. |
 
 The controller creates the temporary configuration, generates the complete chain
 when needed, and removes its temporary configuration and output directory in an

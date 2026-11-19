@@ -1,9 +1,9 @@
 ---
 # defaults file for chainsmith
 
-# Inventory group with exactly one host that generates the certificate chain.
-# The controller can also be a member of chainsmith_nodes.
-chainsmith_controller_host: "{{ groups['chainsmith_controller'] | first }}"
+# Optional inventory group with exactly one certificate-generating host.
+# Without it, use the first host in localhosts. The controller may also receive certificates.
+chainsmith_controller_host: "{{ groups.get('chainsmith_controller', groups.get('localhosts', [])) | first | default('') }}"
 
 # State of the chainsmith package(s) (present, latest, absent).
 # Installation only runs on the controller, where the chain is generated.
@@ -49,8 +49,8 @@ chainsmith_server_intermediate:
     - serverAuth
   servers: "{{ chainsmith_servers }}"
 
-# Inventory hosts that receive certificates (and are checked for expiry).
-chainsmith_nodes: "{{ groups['chainsmith_nodes'] }}"
+# Optional recipient group; otherwise use hacluster + backup (deduplicated).
+chainsmith_nodes: "{{ groups.get('chainsmith_nodes', groups.get('hacluster', []) + groups.get('backup', [])) | unique | list }}"
 # List of FQDNs of all chainsmith_nodes (derived from facts).
 chainsmith_hosts: "{% set nodes = [] %}{% for node in chainsmith_nodes %}{% do nodes.append(hostvars[node].ansible_facts.fqdn) %}{% endfor %}{{ nodes }}"
 # List of the first IPv4 address of all chainsmith_nodes (derived from facts).
