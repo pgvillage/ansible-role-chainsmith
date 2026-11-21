@@ -1,13 +1,13 @@
 ---
 # chainsmith runs on the controller, so download the chainsmith release for
-# the controller's OS and architecture into the scenario's ephemeral directory.
+# the controller's OS and architecture beside the configured chainsmith binary.
 - name: Prepare the controller
-  hosts: localhost
+  hosts: "{{ groups.get('chainsmith_controller', groups.get('localhosts', []))[:1] }}"
   gather_facts: true
   become: false
   vars:
     chainsmith_version: v0.3.23
-    chainsmith_dir: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}"
+    chainsmith_dir: "{{ chainsmith_cmd | dirname }}"
     chainsmith_os: "{{ ansible_facts.system | lower }}"
     chainsmith_arch: "{{ {'x86_64': 'amd64', 'aarch64': 'arm64'}.get(ansible_facts.architecture, ansible_facts.architecture) }}"
     chainsmith_release: https://github.com/pgvillage-tools/chainsmith/releases/download/{{ chainsmith_version }}
@@ -28,7 +28,7 @@
 # The role deploys the server certificate and the client certificates for the
 # users in chainsmith_users, which must exist.
 - name: Prepare the nodes
-  hosts: all
+  hosts: "{{ groups.get('chainsmith_nodes', groups.get('hacluster', []) + groups.get('backup', [])) | unique | list }}"
   tasks:
     - name: Install openssl, used by the role to check the certificates
       ansible.builtin.dnf:

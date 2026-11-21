@@ -1,8 +1,8 @@
 ---
-# The role runs on localhost (where the chain is generated) and the nodes
+# The controller and recipients must run the role together.
 - name: Converge
-  hosts:
-    - localhost
-    - all
+  hosts: >-
+    {{ (groups.get('chainsmith_controller', groups.get('localhosts', []))[:1]
+        + groups.get('chainsmith_nodes', groups.get('hacluster', []) + groups.get('backup', []))) | unique | list }}
   roles:
     - role: pgvillage.chainsmith
