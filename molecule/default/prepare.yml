@@ -2,7 +2,7 @@
 # chainsmith runs on the controller, so download the chainsmith release for
 # the controller's OS and architecture beside the configured chainsmith binary.
 - name: Prepare the controller
-  hosts: "{{ groups.get('chainsmith_controller', groups.get('localhosts', []))[:1] }}"
+  hosts: "{{ 'chainsmith_controller' if 'chainsmith_controller' in groups else 'localhosts' }}"
   gather_facts: true
   become: false
   vars:
@@ -28,7 +28,7 @@
 # The role deploys the server certificate and the client certificates for the
 # users in chainsmith_users, which must exist.
 - name: Prepare the nodes
-  hosts: "{{ groups.get('chainsmith_nodes', groups.get('hacluster', []) + groups.get('backup', [])) | unique | list }}"
+  hosts: hacluster
   tasks:
     - name: Install openssl, used by the role to check the certificates
       ansible.builtin.dnf:

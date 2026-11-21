@@ -26,15 +26,10 @@ No dependencies
 Example Playbook
 ----------------
 
-By default, the first host in `localhosts` generates certificates and the union
-of `hacluster` and `backup` receives them. Existing inventories using these groups
-can keep their host selection without adding new groups.
-
-Optionally define `chainsmith_controller` with exactly one generator and/or
-`chainsmith_nodes` with the recipients to override those defaults independently.
-A host can belong to both groups. No parent group is required.
-
-Inventory example:
+By default the first host in `localhosts` generates the certificates and the
+hosts in `hacluster` and `backup` receive them. To choose other hosts, define the
+`chainsmith_controller` group (exactly one host) and/or the `chainsmith_nodes`
+group; a host can be in both:
 
 ```yaml
 all:
@@ -54,11 +49,8 @@ all:
         node-04:
 ```
 
-Use the same inventory hostname for a machine in every group. The controller
-can also be reached over SSH; its inventory name need not be `localhost`.
-Existing service groups can be children of `chainsmith_nodes`, as shown above.
-
-With explicit groups, run the role on both together:
+Run the role on the controller and all recipients together. The recipient users
+(`chainsmith_users`) must already exist.
 
 ```yaml
 - name: Generate and deploy certificates
@@ -69,37 +61,8 @@ With explicit groups, run the role on both together:
     - pgvillage.chainsmith
 ```
 
-The recipient users must already exist. Configure `chainsmith_users` and the
-certificate paths and owners for the services on each recipient. To perform
-certificate work, the selected controller and every recipient must be in the
-same play batch. Use the default `linear` strategy so checks finish on all
-recipients before generation and deployment.
-
-If `--limit`, `serial` or the play's host selection leaves required hosts outside
-the current batch, Chainsmith prints a warning-style message listing those hosts
-and skips its package installation, user discovery, certificate checks,
-generation, deployment and cleanup. Other tasks and roles continue normally.
-This also applies when the optional inventory groups are absent and the legacy
-defaults are used. Invalid controller or recipient configuration still fails
-validation.
-
-Serial maintenance runs therefore skip certificate work in every incomplete
-batch. Run certificate management separately with the controller and all
-recipients together; a limited run containing that complete set works normally.
-Existing certificates are untouched by an incomplete run.
-
-
-Testing
--------
-
-GitHub CI runs `molecule test --all` for both scenarios: `default` covers the
-legacy inventory defaults with a separate controller, and `controller_node`
-covers an explicitly selected controller that also receives certificates.
-The configured sequences check convergence, idempotence, certificate chains,
-matching private keys, file ownership and permissions, and temporary-file cleanup.
-
-Limited and serial runs, continuation after a skipped role, and renewal in a
-later complete run were checked during development.
+With `--limit` or `serial` the role skips the certificates with a warning, see
+[`--limit` and `serial`](docs/api.md#--limit-and-serial).
 
 License
 -------
