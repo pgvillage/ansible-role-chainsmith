@@ -13,33 +13,22 @@ This document describes all variables of the `pgvillage.chainsmith` role, as def
    with the configuration in `chainsmith_body`, and the complete chain (server and client
    certificates and keys) is redeployed to all nodes.
 
-The `chainsmith_controller` and `chainsmith_nodes` inventory groups are optional.
-Without `chainsmith_controller`, the first host in `localhosts` generates the
-chain. Without `chainsmith_nodes`, the deduplicated union of `hacluster` and
-`backup` receives certificates. Each group independently overrides its default.
-When present, the controller group must contain exactly one host and the
-recipient group must not be empty. The resulting selection must always have
-one controller and at least one recipient.
+### Host selection
 
-The controller can also be a recipient. Neither responsibility depends on its
-inventory hostname or on whether Ansible connects locally or over SSH. No parent
-inventory group is needed.
+The controller is the host in the `chainsmith_controller` group, or else the first
+host in `localhosts`. The recipients are the hosts in `chainsmith_nodes`, or else
+those in `hacluster` and `backup`. Both groups are optional; when defined,
+`chainsmith_controller` must hold exactly one host and `chainsmith_nodes` at least
+one. The controller may also be a recipient and does not have to be `localhost`.
 
-To perform certificate work, run the role on the selected controller and
-recipients together, with facts available for recipients and the default
-`linear` strategy. If `--limit`, `serial` or play host selection excludes any
-required host from the current batch, the role prints a warning-style message
-once for that batch, identifying the controller and missing hosts. It skips all
-package installation, user discovery, certificate checks, generation, deployment
-and cleanup. Other tasks and roles continue normally; existing certificate files
-are untouched. Invalid inventory or effective host selection still fails
-validation before this decision.
+### `--limit` and `serial`
 
-Each incomplete serial batch skips certificate work, so perform certificate
-management in a separate complete batch. A limit that includes the controller
-and every recipient runs normally. This behavior applies to both explicit
-groups and legacy defaults.
-See the [inventory and playbook example](../README.md#example-playbook).
+`chainsmith issue` generates a new chain (including a new CA), which must reach
+all recipients at once. So the role only does certificate work when the controller
+and all recipients are in the current play batch. Otherwise (`--limit`, `serial`,
+an unreachable host) it prints a warning, skips its tasks and leaves the existing
+certificates alone; the rest of the play continues. Run the role on the complete
+set to check or renew the certificates.
 
 ## Inventory selection
 

@@ -1,6 +1,6 @@
 ---
 - name: Verify
-  hosts: "{{ groups.get('chainsmith_nodes', groups.get('hacluster', []) + groups.get('backup', [])) | unique | list }}"
+  hosts: hacluster
   vars:
     server_dir: /etc/pki/postgres
     client_dir: /home/postgres/.postgresql
@@ -72,7 +72,7 @@
 # The role keeps its output (CA and private keys) in a temporary dir on the
 # controller, and must remove it, and its temporary config file, afterwards
 - name: Verify the controller
-  hosts: "{{ groups.get('chainsmith_controller', groups.get('localhosts', []))[:1] }}"
+  hosts: "{{ 'chainsmith_controller' if 'chainsmith_controller' in groups else 'localhosts' }}"
   gather_facts: true
   become: false
   tasks:

@@ -32,7 +32,6 @@ provisioner:
     prepare: ../default/prepare.yml
     converge: ../default/converge.yml
     verify: ../default/verify.yml
-    side_effect: ../default/side_effect.yml
   config_options:
     defaults:
       jinja2_extensions: jinja2.ext.do

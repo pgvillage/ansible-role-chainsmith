@@ -1,25 +1,17 @@
 ---
 # tasks file for chainsmith
 
-- name: Validate chainsmith inventory groups
+# An empty chainsmith_controller or chainsmith_nodes group leaves the selection empty
+- name: Validate the chainsmith controller and recipients
   ansible.builtin.assert:
     that:
-      - "'chainsmith_controller' not in groups or groups['chainsmith_controller'] | length == 1"
-      - "'chainsmith_nodes' not in groups or groups['chainsmith_nodes'] | length > 0"
-    fail_msg: >-
-      When defined, chainsmith_controller must contain exactly one host and
-      chainsmith_nodes must contain at least one recipient. The controller may also be a recipient.
-    quiet: true
-
-- name: Validate chainsmith host selection
-  ansible.builtin.assert:
-    that:
+      - groups.chainsmith_controller | default([]) | length < 2
       - chainsmith_controller_host | length > 0
       - chainsmith_nodes | length > 0
     fail_msg: >-
-      Select a controller through chainsmith_controller or the first host in localhosts,
-      and recipients through chainsmith_nodes or hacluster + backup.
-      The chainsmith_controller_host and chainsmith_nodes variables may also be overridden.
+      Select exactly one controller (chainsmith_controller, or else the first host in localhosts)
+      and at least one recipient (chainsmith_nodes, or else hacluster + backup).
+      The controller may also be a recipient.
     quiet: true
 
 - name: Explain why chainsmith is skipped for this batch
